@@ -36,30 +36,36 @@ const getUserProfile = async (req, res) => {
 
 const signupUser = async (req, res) => {
   try {
+    // Destructing the input data from the req.body
     const { name, email, username, password } = req.body;
-    const user = await User.findOne({ $or: [{ email }, { username }] });
 
+    // Checking if the user with the same email or username already exists in the database 
+    const user = await User.findOne({ $or: [{ email }, { username }] });
     if (user) {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Generating a salt for password hashing
+    const salt = await bcrypt.genSalt(10); // '10' is the number of rounds for salt generation
+    const hashedPassword = await bcrypt.hash(password, salt); // Hashing the user's password using the generated salt
 
+    // Creating a new user instance with the provided and hashed password
     const newUser = new User({
-      name,
-      email,
-      username,
-      password: hashedPassword,
+      name, // User's full name
+      email, // User's email
+      username, // user's chosen username 
+      password: hashedPassword, // user's hashed password for secure storage
     });
 
+    // Saving the new user to the database
     await newUser.save();
 
     if (newUser) {
       generateTokenAndSetCookie(newUser._id, res);
 
+      // Response with user details (excluding password)
       res.status(201).json({
-        _id: newUser._id,
+        _id: newUser._id, // Unique identifier for the user
         name: newUser.name,
         email: newUser.email,
         username: newUser.username,
